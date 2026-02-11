@@ -1,0 +1,44 @@
+# ============ BUILD STAGE ============
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY prisma ./prisma/
+
+RUN npm ci --ignore-scripts
+RUN npx prisma generate
+
+COPY . .
+RUN npm run build
+
+# Remove dev dependencies
+RUN npm prune --production
+
+# ============ RUNTIME STAGE ============
+FROM node:20-alpine AS runner
+
+# Security: non-root user
+RUN addgroup -g 1001 -S medix && \
+    adduser -S medix -u 1001
+
+WORKDIR /app
+
+# Copy only production artifacts
+COPY --from=builder --chown=medix:medix /app/dist ./dist
+COPY --from=builder --chown=medix:medix /app/node_modules ./node_modules
+COPY --from=builder --chown=medix:medix /app/prisma ./prisma
+COPY --from=builder --chown=medix:medix /app/package.json ./
+
+ENV NODE_ENV=production
+ENV PORT=4000
+
+# Security headers
+ENV HELMET_ENABLED=true
+
+USER medix
+EXPOSE 4000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:4000/api/v1/health || exit 1
+
+CMD ["node", "dist/main.js"]

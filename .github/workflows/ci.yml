@@ -1,0 +1,83 @@
+name: Medix CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: "20"
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: medix
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: medix_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7.2-alpine
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test
+        env:
+          DATABASE_URL: postgresql://medix:test@localhost:5432/medix_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret
+
+  build:
+    needs: lint-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "npm"
+      - run: npm ci
+      - run: npm run build
+
+  deploy-staging:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+      - name: Build & Push Docker Images
+        run: |
+          docker build -t medix-api:${{ github.sha }} ./apps/api
+          docker build -t medix-web:${{ github.sha }} ./apps/web
+      - name: Deploy to EKS
+        run: |
+          aws eks update-kubeconfig --name medix-staging
+          kubectl set image deployment/api api=medix-api:${{ github.sha }} -n staging
+          kubectl set image deployment/web web=medix-web:${{ github.sha }} -n staging

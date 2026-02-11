@@ -1,0 +1,49 @@
+# OWASP ZAP DAST Configuration
+env:
+  contexts:
+    - name: "Medix API"
+      urls:
+        - "https://api.medix.hospital"
+      includePaths:
+        - "https://api.medix.hospital/api/.*"
+      excludePaths:
+        - "https://api.medix.hospital/docs.*"
+      authentication:
+        method: "json"
+        parameters:
+          loginPageUrl: "https://api.medix.hospital/api/v1/auth/login"
+          loginRequestUrl: "https://api.medix.hospital/api/v1/auth/login"
+          loginRequestBody: '{"email":"security-test@medix.hospital","password":"TestPass123!"}'
+        verification:
+          method: "response"
+          loggedInRegex: "accessToken"
+
+  parameters:
+    failOnError: true
+    progressToStdout: true
+
+  jobs:
+    - type: spider
+      parameters:
+        maxDuration: 5
+        maxDepth: 5
+
+    - type: spiderAjax
+      parameters:
+        maxDuration: 5
+
+    - type: passiveScan-wait
+      parameters:
+        maxDuration: 10
+
+    - type: activeScan
+      parameters:
+        maxRuleDurationInMins: 5
+        maxScanDurationInMins: 30
+        policy: "API-Scan"
+
+    - type: report
+      parameters:
+        template: "modern"
+        reportDir: "/reports"
+        reportFile: "zap-report"

@@ -1,0 +1,25 @@
+# Trivy Container Vulnerability Scanner
+scan:
+  security-checks:
+    - vuln
+    - config
+    - secret
+  severity:
+    - CRITICAL
+    - HIGH
+  ignore-unfixed: true
+
+vulnerability:
+  type:
+    - os
+    - library
+
+secret:
+  config:
+    enabled: true
+    rules:
+      - aws-access-key-id
+      - aws-secret-access-key
+      - github-token
+      - private-key
+      - generic-api-key

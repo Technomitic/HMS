@@ -1,0 +1,103 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medix-api
+  namespace: medix
+  labels:
+    app: medix-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: medix-api
+  template:
+    metadata:
+      labels:
+        app: medix-api
+    spec:
+      nodeSelector:
+        role: app
+      containers:
+        - name: api
+          image: ghcr.io/medix/api:latest
+          ports:
+            - containerPort: 4000
+              protocol: TCP
+          envFrom:
+            - secretRef:
+                name: medix-secrets
+          env:
+            - name: NODE_ENV
+              value: "production"
+            - name: PORT
+              value: "4000"
+            - name: CORS_ORIGINS
+              value: "https://medix.hospital,https://app.medix.hospital"
+          resources:
+            requests:
+              cpu: "250m"
+              memory: "512Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+          livenessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 4000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/v1/health
+              port: 4000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["/bin/sh", "-c", "sleep 5"]
+      terminationGracePeriodSeconds: 30
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medix-api
+  namespace: medix
+spec:
+  selector:
+    app: medix-api
+  ports:
+    - port: 80
+      targetPort: 4000
+      protocol: TCP
+  type: ClusterIP
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: medix-api-hpa
+  namespace: medix
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: medix-api
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80

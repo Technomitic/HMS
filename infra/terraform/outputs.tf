@@ -1,0 +1,26 @@
+output "vpc_id" {
+  value = module.vpc.vpc_id
+}
+
+output "eks_cluster_name" {
+  value = module.eks.cluster_name
+}
+
+output "eks_cluster_endpoint" {
+  value     = module.eks.cluster_endpoint
+  sensitive = true
+}
+
+output "rds_endpoint" {
+  value     = module.rds.db_instance_endpoint
+  sensitive = true
+}
+
+output "redis_endpoint" {
+  value     = aws_elasticache_cluster.redis.cache_nodes[0].address
+  sensitive = true
+}
+
+output "s3_reports_bucket" {
+  value = aws_s3_bucket.reports.bucket
+}

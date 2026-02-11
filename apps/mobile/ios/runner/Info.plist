@@ -1,0 +1,9 @@
+<!-- Add these inside the existing <dict> -->
+<key>NSCameraUsageDescription</key>
+<string>Medix needs camera access for QR code check-in</string>
+<key>NSAppTransportSecurity</key>
+<dict>
+    <!-- For local development only; remove in production -->
+    <key>NSAllowsArbitraryLoads</key>
+    <true/>
+</dict>

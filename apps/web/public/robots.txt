@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /admin
+Disallow: /doctor
+Disallow: /patient
+Disallow: /api
+Allow: /
+Allow: /book
+Allow: /login
+Allow: /register
+
+Sitemap: https://medix.hospital/sitemap.xml

@@ -1,0 +1,81 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: medix-db
+    environment:
+      POSTGRES_USER: medix
+      POSTGRES_PASSWORD: medix_dev_2024
+      POSTGRES_DB: medix
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U medix"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: medix-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --requirepass medix_redis_2024
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "medix_redis_2024", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: medix-mq
+    environment:
+      RABBITMQ_DEFAULT_USER: medix
+      RABBITMQ_DEFAULT_PASS: medix_mq_2024
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: medix-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://medix:medix_dev_2024@postgres:5432/medix
+      REDIS_URL: redis://:medix_redis_2024@redis:6379
+      JWT_SECRET: dev-jwt-secret-change-in-production
+      NODE_ENV: development
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/api:/app
+      - /app/node_modules
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: medix-web
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./apps/web:/app
+      - /app/node_modules
+      - /app/.next
+
+volumes:
+  pgdata:

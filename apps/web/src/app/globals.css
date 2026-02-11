@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@layer base {
+  :root {
+    --background: #F8FAFC;
+    --foreground: #1E293B;
+  }
+
+  body {
+    @apply bg-neutral-bg text-neutral-text antialiased;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+
+  * {
+    @apply border-neutral-border;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-lg rounded-2xl;
+  }
+
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary-500 to-accent-500;
+  }
+
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-primary-500 text-white font-semibold rounded-xl
+    hover:bg-primary-700 transition-all duration-200
+    active:scale-[0.98] shadow-md hover:shadow-lg
+    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-white text-primary-500 font-semibold rounded-xl border-2 border-primary-500
+    hover:bg-primary-50 transition-all duration-200
+    active:scale-[0.98]
+    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 bg-white border border-neutral-border rounded-xl
+    focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent
+    placeholder:text-neutral-disabled transition-all duration-200;
+  }
+
+  .stat-card {
+    @apply bg-white rounded-2xl p-6 shadow-sm border border-neutral-border
+    hover:shadow-md transition-shadow duration-300;
+  }
+
+  .sidebar-link {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl text-neutral-muted
+    hover:bg-primary-50 hover:text-primary-500 transition-all duration-200;
+  }
+
+  .sidebar-link-active {
+    @apply flex items-center gap-3 px-4 py-3 rounded-xl
+    bg-primary-500 text-white shadow-md;
+  }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* Custom animations */
+@keyframes heartbeat {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(1.5); }
+}
+
+.animate-heartbeat {
+  animation: heartbeat 1.5s ease-in-out infinite;
+}

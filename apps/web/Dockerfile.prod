@@ -1,0 +1,37 @@
+# ============ BUILD STAGE ============
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NEXT_PUBLIC_API_URL=https://api.medix.hospital
+
+RUN npm run build
+
+# ============ RUNTIME STAGE ============
+FROM node:20-alpine AS runner
+
+RUN addgroup -g 1001 -S medix && \
+    adduser -S medix -u 1001
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+
+COPY --from=builder --chown=medix:medix /app/.next/standalone ./
+COPY --from=builder --chown=medix:medix /app/.next/static ./.next/static
+COPY --from=builder --chown=medix:medix /app/public ./public
+
+USER medix
+EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://localhost:3000/ || exit 1
+
+CMD ["node", "server.js"]
