@@ -204,6 +204,7 @@ async function main() {
   });
   console.log('✅ Pharmacist: Olivia Garcia');
   
+
   // ─── PATIENTS ───
   const pat1 = await prisma.user.upsert({
     where: { email: 'patient@medix.com' },
