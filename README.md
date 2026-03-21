@@ -1,4 +1,4 @@
-# 🏥 Medix — Digital Hospital Platform:
+# 🏥 Medix — Digital Hospital Platform:-
 
 State-of-the-art digital hospital platform built with Next.js, NestJS, Flutter, and PostgreSQL.
 
